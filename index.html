@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<title>Tabela de Tanque</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Tanque">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#0a58a8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* Layout: coluna única estreita, resultado grande no topo, tanque em corte ao lado dos números. */
+  :root {
+    --bg: #eff1ee;
+    --surface: #ffffff;
+    --fg: #17201d;
+    --muted: #5c6a65;
+    --line: #d3d9d5;
+    --accent: #0a58a8;
+    --accent-fg: #ffffff;
+    --fuel: #f0b429;
+    --warn: #a63a12;
+    --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+    --font-body: "Barlow", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #111815; --surface: #1a2420; --fg: #e9eeeb; --muted: #98a8a1;
+      --line: #2e3b36; --accent: #5aa6ef; --accent-fg: #0b1713; --fuel: #f0b429; --warn: #ff9b73;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #111815; --surface: #1a2420; --fg: #e9eeeb; --muted: #98a8a1;
+    --line: #2e3b36; --accent: #5aa6ef; --accent-fg: #0b1713; --fuel: #f0b429; --warn: #ff9b73;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--fg);
+    font-family: var(--font-body); font-size: 16px; line-height: 1.4;
+    padding-block: max(20px, env(safe-area-inset-top, 0px)) max(32px, env(safe-area-inset-bottom, 0px));
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  main { max-width: 520px; margin: 0 auto; display: grid; gap: 16px; }
+  h1 { font-family: var(--font-display); font-size: 28px; letter-spacing: .02em; margin: 0; text-transform: uppercase; }
+  .sub { color: var(--muted); font-size: 14px; margin: 2px 0 0; }
+  .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 3px; gap: 3px; }
+  .seg button {
+    font: 600 15px var(--font-body); color: var(--muted); background: transparent; border: 0;
+    border-radius: 6px; padding: 10px 8px; cursor: pointer; min-height: 44px;
+  }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); }
+  .seg button:focus-visible, input:focus-visible, .chip:focus-visible { outline: 3px solid var(--fuel); outline-offset: 2px; }
+  .field { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; display: grid; gap: 4px; }
+  .field label { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .row { display: flex; align-items: baseline; gap: 10px; }
+  .row input {
+    flex: 1; min-width: 0; width: 100%; border: 0; background: transparent; color: var(--fg);
+    font: 700 56px/1.1 var(--font-display); font-variant-numeric: tabular-nums; padding: 0;
+  }
+  .unit { font: 600 24px var(--font-display); color: var(--muted); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { font: 500 14px var(--font-body); color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; cursor: pointer; min-height: 36px; }
+  .result { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; grid-template-columns: minmax(0, 1fr) 132px; gap: 16px; align-items: center; }
+  .big { font: 700 clamp(44px, 14vw, 64px)/1 var(--font-display); font-variant-numeric: tabular-nums; color: var(--accent); overflow-wrap: anywhere; }
+  .big small { font-size: .45em; color: var(--muted); margin-left: 6px; font-weight: 600; }
+  .lbl { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  dl { margin: 12px 0 0; display: grid; gap: 6px; }
+  dl div { display: flex; justify-content: space-between; gap: 8px; border-top: 1px solid var(--line); padding-top: 6px; }
+  dt { color: var(--muted); font-size: 14px; }
+  dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+  svg { width: 100%; height: auto; max-width: 132px; display: block; }
+  .ring { fill: none; stroke: var(--muted); stroke-width: 3; }
+  .liquid { fill: var(--fuel); }
+  .wall { fill: var(--bg); }
+  .err { color: var(--warn); font-weight: 600; min-height: 1.4em; margin: 0; font-size: 14px; }
+  .foot { color: var(--muted); font-size: 13px; margin: 0; }
+  @media (max-width: 380px) { .result { grid-template-columns: 1fr; } svg { max-width: 110px; margin: 0 auto; } }
+</style>
+
+</head>
+<body>
+<main>
+  <header>
+    <h1>Tabela de Tanque</h1>
+    <p class="sub">Tanque TMT pleno, 254 cm de diâmetro</p>
+  </header>
+
+  <div class="seg" role="group" aria-label="Tanque">
+    <button type="button" id="t30" aria-pressed="false">30 m³</button>
+    <button type="button" id="t60" aria-pressed="true">60 m³</button>
+  </div>
+
+  <div class="seg" role="group" aria-label="Conversão">
+    <button type="button" id="m-h" aria-pressed="true">Régua → Litros</button>
+    <button type="button" id="m-l" aria-pressed="false">Litros → Régua</button>
+  </div>
+
+  <div class="field">
+    <label for="inp" id="inpLabel">Altura da régua</label>
+    <div class="row">
+      <input id="inp" type="text" inputmode="decimal" autocomplete="off" value="100" aria-describedby="err">
+      <span class="unit" id="inpUnit">cm</span>
+    </div>
+  </div>
+  <p class="err" id="err" role="alert"></p>
+
+  <section class="result" aria-live="polite">
+    <div>
+      <div class="lbl" id="outLabel">Volume</div>
+      <div class="big" id="out">0<small>L</small></div>
+      <dl>
+        <div><dt>Cabe ainda</dt><dd id="free">0 L</dd></div>
+        <div><dt>Ocupado</dt><dd id="pct">0%</dd></div>
+        <div><dt>Capacidade</dt><dd id="cap">0 L</dd></div>
+      </dl>
+    </div>
+    <svg viewBox="0 0 200 200" role="img" aria-label="Corte do tanque mostrando o nível">
+      <defs><clipPath id="clip"><circle cx="100" cy="100" r="92"/></clipPath></defs>
+      <rect class="wall" x="0" y="0" width="200" height="200" rx="8" opacity="0"/>
+      <g clip-path="url(#clip)"><rect id="liq" class="liquid" x="0" y="192" width="200" height="200"/></g>
+      <circle class="ring" cx="100" cy="100" r="92"/>
+    </svg>
+  </section>
+
+  <div>
+    <div class="lbl" style="margin-bottom:6px">Atalhos</div>
+    <div class="chips" id="chips"></div>
+  </div>
+
+  <p class="foot">Valores exatos da tabela volumétrica TMT, sem arredondar. Alturas com vírgula, como 87,5 cm, são interpoladas entre duas linhas da tabela.</p>
+</main>
+
+<script>
+(function () {
+  var D = 254, R = D / 2;
+  var LEN = { 30: 600, 60: 1202 };
+  var tank = 60, mode = "h";
+
+  var $ = function (id) { return document.getElementById(id); };
+  var inp = $("inp"), err = $("err");
+
+  var TAB={30:[12.73, 35.98, 66.02, 101.52, 141.7, 186.05, 234.17, 285.76, 340.56, 398.39, 459.06, 522.43, 588.35, 656.73, 727.44, 800.4, 875.51, 952.71, 1031.91, 1113.06, 1196.08, 1280.92, 1367.52, 1455.84, 1545.82, 1637.42, 1730.59, 1825.29, 1921.49, 2019.15, 2118.22, 2218.68, 2320.5, 2423.63, 2528.05, 2633.74, 2740.66, 2848.78, 2958.09, 3068.54, 3180.13, 3292.81, 3406.58, 3521.41, 3637.28, 3754.16, 3872.03, 3990.88, 4110.67, 4231.41, 4353.06, 4475.6, 4599.02, 4723.31, 4848.43, 4974.39, 5101.15, 5228.7, 5357.03, 5486.12, 5615.96, 5746.53, 5877.81, 6009.79, 6142.46, 6275.8, 6409.79, 6544.43, 6679.7, 6815.58, 6952.07, 7089.15, 7226.8, 7365.02, 7503.79, 7643.09, 7782.93, 7923.27, 8064.12, 8205.46, 8347.28, 8489.56, 8632.3, 8775.48, 8919.09, 9063.12, 9207.57, 9352.41, 9497.64, 9643.24, 9789.21, 9935.53, 10082.2, 10229.21, 10376.53, 10524.17, 10672.11, 10820.34, 10968.85, 11117.63, 11266.68, 11415.98, 11565.51, 11715.28, 11865.27, 12015.47, 12165.87, 12316.46, 12467.24, 12618.18, 12769.29, 12920.55, 13071.95, 13223.49, 13375.15, 13526.92, 13678.8, 13830.77, 13982.83, 14134.96, 14287.16, 14439.42, 14591.73, 14744.07, 14896.44, 15048.83, 15201.22, 15353.62, 15506.01, 15658.38, 15810.72, 15963.03, 16115.28, 16267.48, 16419.62, 16571.68, 16723.65, 16875.53, 17027.3, 17178.96, 17330.5, 17481.9, 17633.16, 17784.27, 17935.21, 18085.99, 18236.58, 18386.98, 18537.18, 18687.17, 18836.94, 18986.47, 19135.77, 19284.81, 19433.6, 19582.11, 19730.34, 19878.28, 20025.92, 20173.24, 20320.25, 20466.91, 20613.24, 20759.21, 20904.81, 21050.04, 21194.88, 21339.32, 21483.36, 21626.97, 21770.15, 21912.89, 22055.17, 22196.99, 22338.33, 22479.18, 22619.52, 22759.36, 22898.66, 23037.43, 23175.65, 23313.3, 23450.38, 23586.87, 23722.75, 23858.02, 23992.66, 24126.65, 24259.99, 24392.66, 24524.64, 24655.92, 24786.49, 24916.33, 25045.42, 25173.75, 25301.3, 25428.06, 25554.01, 25679.14, 25803.42, 25926.85, 26049.39, 26171.04, 26291.77, 26411.57, 26530.42, 26648.29, 26765.17, 26881.04, 26995.86, 27109.63, 27222.32, 27333.91, 27444.36, 27553.67, 27661.79, 27768.71, 27874.39, 27978.82, 28081.95, 28183.77, 28284.23, 28383.3, 28480.96, 28577.16, 28671.86, 28765.03, 28856.63, 28946.61, 29034.93, 29121.53, 29206.37, 29289.39, 29370.54, 29449.74, 29526.94, 29602.05, 29675.01, 29745.72, 29814.09, 29880.02, 29943.39, 30004.06, 30061.88, 30116.69, 30168.28, 30216.4, 30260.75, 30300.93, 30336.43, 30366.47, 30389.71, 30402.45],60:[25.51, 72.07, 132.25, 203.37, 283.88, 372.72, 469.12, 572.46, 682.26, 798.11, 919.65, 1046.6, 1178.67, 1315.64, 1457.3, 1603.46, 1753.94, 1908.59, 2067.27, 2229.82, 2396.14, 2566.11, 2739.6, 2916.53, 3096.79, 3280.29, 3466.95, 3656.67, 3849.39, 4045.03, 4243.51, 4444.76, 4648.73, 4855.34, 5064.54, 5276.26, 5490.45, 5707.06, 5926.03, 6147.31, 6370.85, 6596.61, 6824.52, 7054.56, 7286.68, 7520.83, 7756.97, 7995.05, 8235.05, 8476.92, 8720.62, 8966.12, 9213.38, 9462.36, 9713.03, 9965.35, 10219.3, 10474.83, 10731.92, 10990.53, 11250.64, 11512.21, 11775.21, 12039.61, 12305.39, 12572.51, 12840.95, 13110.68, 13381.66, 13653.89, 13927.31, 14201.93, 14477.69, 14754.59, 15032.58, 15311.66, 15591.79, 15872.96, 16155.12, 16438.27, 16722.38, 17007.42, 17293.37, 17580.21, 17867.91, 18156.46, 18445.83, 18735.99, 19026.93, 19318.63, 19611.05, 19904.19, 20198.01, 20492.51, 20787.65, 21083.42, 21379.79, 21676.74, 21974.26, 22272.33, 22570.92, 22870.0, 23169.58, 23469.61, 23770.09, 24070.99, 24372.29, 24673.98, 24976.03, 25278.43, 25581.14, 25884.17, 26187.48, 26491.06, 26794.88, 27098.94, 27403.2, 27707.65, 28012.27, 28317.05, 28621.95, 28926.97, 29232.09, 29537.28, 29842.53, 30147.81, 30453.12, 30758.42, 31063.71, 31368.96, 31674.15, 31979.27, 32284.29, 32589.19, 32893.97, 33198.59, 33503.04, 33807.3, 34111.36, 34415.18, 34718.76, 35022.07, 35325.09, 35627.81, 35930.21, 36232.26, 36533.95, 36835.25, 37136.15, 37436.63, 37736.66, 38036.23, 38335.32, 38633.91, 38931.97, 39229.49, 39526.45, 39822.82, 40118.59, 40413.73, 40708.22, 41002.05, 41295.19, 41587.61, 41879.31, 42170.25, 42460.41, 42749.78, 43038.33, 43326.03, 43612.87, 43898.82, 44183.86, 44467.97, 44751.12, 45033.28, 45314.44, 45594.58, 45873.65, 46151.65, 46428.55, 46704.31, 46978.92, 47252.35, 47524.58, 47795.56, 48065.29, 48333.73, 48600.85, 48866.63, 49131.03, 49394.03, 49655.6, 49915.7, 50174.32, 50431.41, 50686.94, 50940.89, 51193.21, 51443.88, 51692.86, 51940.12, 52185.62, 52429.32, 52671.19, 52911.19, 53149.27, 53385.41, 53619.56, 53851.68, 54081.71, 54309.63, 54535.39, 54758.93, 54980.21, 55199.18, 55415.79, 55629.98, 55841.7, 56050.9, 56257.51, 56461.48, 56662.73, 56861.21, 57056.85, 57249.57, 57439.29, 57625.95, 57809.45, 57989.71, 58166.64, 58340.13, 58510.1, 58676.42, 58838.97, 58997.65, 59152.3, 59302.78, 59448.94, 59590.6, 59727.57, 59859.64, 59986.58, 60108.13, 60223.97, 60333.77, 60437.12, 60533.52, 60622.36, 60702.87, 60773.99, 60834.17, 60880.73, 60906.24]};
+  /* TAB[tanque][h-1] = litros na altura h (cm), igual à tabela TMT. A linha 208 não existe no PDF e foi calculada. */
+  function vol(h) {
+    h = Math.max(0, Math.min(D, h));
+    var t = TAB[tank], i = Math.floor(h);
+    var a = i === 0 ? 0 : t[i - 1];
+    if (i >= D || h === i) return a;
+    return a + (t[i] - a) * (h - i);
+  }
+  function cap() { return TAB[tank][D - 1]; }
+  function height(l) {
+    var t = TAB[tank], lo = 0, hi = D;
+    for (var i = 0; i < 60; i++) {
+      var mid = (lo + hi) / 2;
+      if (vol(mid) < l) lo = mid; else hi = mid;
+    }
+    return (lo + hi) / 2;
+  }
+  function fmt(n, d) { return n.toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d }); }
+  function parse(s) { return Number(String(s).trim().replace(",", ".")); }
+
+  function render() {
+    var c = cap();
+    var v = parse(inp.value);
+    var h, l, msg = "";
+    if (inp.value.trim() === "" || isNaN(v) || v < 0) {
+      msg = inp.value.trim() === "" ? "" : "Digite um número válido.";
+      h = 0; l = 0;
+    } else if (mode === "h") {
+      if (v > D) { msg = "A régua vai até " + D + " cm."; v = D; }
+      h = v; l = vol(h);
+    } else {
+      if (v > c) { msg = "Capacidade máxima: " + fmt(c, 2) + " L."; v = c; }
+      l = v; h = height(l);
+    }
+    err.textContent = msg;
+    if (mode === "h") {
+      $("out").innerHTML = fmt(l, 2) + "<small>L</small>";
+    } else {
+      $("out").innerHTML = fmt(h, 2) + "<small>cm</small>";
+    }
+    $("free").textContent = fmt(Math.max(0, c - l), 2) + " L";
+    $("pct").textContent = fmt(l / c * 100, 1) + "%";
+    $("cap").textContent = fmt(c, 2) + " L";
+    $("liq").setAttribute("y", String(192 - (h / D) * 184));
+  }
+
+  function setMode(m) {
+    mode = m;
+    $("m-h").setAttribute("aria-pressed", String(m === "h"));
+    $("m-l").setAttribute("aria-pressed", String(m === "l"));
+    $("inpLabel").textContent = m === "h" ? "Altura da régua" : "Volume em litros";
+    $("inpUnit").textContent = m === "h" ? "cm" : "L";
+    $("outLabel").textContent = m === "h" ? "Volume" : "Altura da régua";
+    inp.value = m === "h" ? "100" : "20000";
+    buildChips();
+    render();
+  }
+  function setTank(t) {
+    tank = t;
+    $("t30").setAttribute("aria-pressed", String(t === 30));
+    $("t60").setAttribute("aria-pressed", String(t === 60));
+    buildChips();
+    render();
+  }
+  function buildChips() {
+    var box = $("chips"); box.innerHTML = "";
+    var vals = mode === "h" ? [25, 50, 100, 127, 200, 254] : [1000, 5000, 10000, 15000, 20000, 30000];
+    vals.forEach(function (x) {
+      if (mode === "l" && x > cap()) return;
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "chip";
+      b.textContent = fmt(x, 0) + (mode === "h" ? " cm" : " L");
+      b.addEventListener("click", function () { inp.value = String(x); render(); });
+      box.appendChild(b);
+    });
+  }
+
+  inp.addEventListener("input", render);
+  inp.addEventListener("focus", function () { inp.select(); });
+  $("t30").addEventListener("click", function () { setTank(30); });
+  $("t60").addEventListener("click", function () { setTank(60); });
+  $("m-h").addEventListener("click", function () { setMode("h"); });
+  $("m-l").addEventListener("click", function () { setMode("l"); });
+
+  buildChips();
+  render();
+})();
+</script>
+
+</body>
+</html>
